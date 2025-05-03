@@ -2,17 +2,11 @@
 A test module for the state machine package.
 """
 
-import os
-import sys
-
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
-)
 import random
 import time
 from typing import NoReturn
 
-from state_machine import Driver, ExecutionResult, Step
+from state_machine import ConsoleLogger, Driver, ExecutionResult, Step
 
 
 class Extract(Step):
@@ -57,6 +51,7 @@ def main() -> None:
     driver = Driver(
         first_step=Extract,
         initial_data={"initial": True, "value": 0},
+        logger=ConsoleLogger(),
     )
     driver.start()
     print()
