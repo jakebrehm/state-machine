@@ -17,9 +17,9 @@ class State(ABC):
     max_retries: int = 0
 
     def __init__(self, logger: Logger | None = None) -> None:
+        self.logger = logger if logger is not None else NoLogger()
         self.wall_times: list[float] = []
         self._attempt = 1
-        self._logger = logger if logger is not None else NoLogger()
 
     @property
     @abstractmethod
@@ -45,23 +45,26 @@ class State(ABC):
             return 0.0
         return sum(wall_time for wall_time in self.wall_times)
 
+    def most_recent_wall_time(self) -> float:
+        return self.wall_times[-1] if self.wall_times else 0.0
+
     @abstractmethod
     def execute(self, data: dict) -> ExecutionResult:
         pass
 
     def _execute(self, data: dict) -> StateResult | NoReturn:
         while self._attempt <= self.max_attempts:
-            self._logger.log_attempt_start(self)
+            self.logger.log_attempt_start(self)
             result = self._execute_attempt(data=data)
             if isinstance(result, Exception):
-                self._logger.log_attempt_failure(self, result)
+                self.logger.log_attempt_failure(self, result)
             else:
-                self._logger.log_attempt_success(self)
+                self.logger.log_attempt_success(self)
                 break
             self._attempt += 1
         else:
             raise StateExecutionError(self, result)
-        self._logger.log_state_success(self)
+        self.logger.log_state_success(self)
         return StateResult(
             data=result.data,
             wall_times=self.wall_times,
@@ -78,9 +81,6 @@ class State(ABC):
         wall_time = (end_time - start_time).total_seconds() * 1000
         self.wall_times.append(wall_time)
         return result
-
-    def _most_recent_wall_time(self) -> float:
-        return self.wall_times[-1] if self.wall_times else 0.0
 
     def __str__(self) -> str:
         class_name = self.__class__.__name__

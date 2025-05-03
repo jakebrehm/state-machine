@@ -25,7 +25,7 @@ class Extract(State):
 class Transform(State):
     name = "Transform"
     status = "Applying transformations to data"
-    max_retries = 3
+    max_retries = 1
 
     def execute(self, data: dict) -> ExecutionResult:
         data["value"] = 2
@@ -35,9 +35,9 @@ class Transform(State):
 
     def randomly_fail(self, chance=0.5) -> None | NoReturn:
         random_value = random.random()
-        print(f"Hit random value {random_value}")
+        self.logger.log(f"Hit random value {random_value}...")
         if random_value <= chance:
-            raise ValueError("Test error")
+            raise ValueError("Random chance error")
 
 
 class Load(State):

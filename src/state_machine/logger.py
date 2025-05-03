@@ -36,6 +36,10 @@ class Logger(ABC):
     def log_state_success(self, state: State) -> None:
         pass
 
+    @abstractmethod
+    def log(self, message: str) -> None:
+        pass
+
 
 class NoLogger(Logger):
     def log_driver_init(self) -> None:
@@ -59,6 +63,9 @@ class NoLogger(Logger):
     def log_state_success(self, state: State) -> None:
         pass
 
+    def log(self, message: str) -> None:
+        pass
+
 
 class ConsoleLogger(Logger):
     def log_driver_init(self) -> None:
@@ -79,15 +86,18 @@ class ConsoleLogger(Logger):
     def log_attempt_success(self, state: State) -> None:
         print(
             f"Successful attempt of state {state.name} "
-            f"({state._most_recent_wall_time():0.2f} ms)."
+            f"({state.most_recent_wall_time():0.2f} ms)."
         )
 
     def log_attempt_failure(self, state: State, exception: Exception) -> None:
         exception_type = exception.__class__.__name__
         print(
             f"Encountered {exception_type} attempting state {state.name} "
-            f"({state._most_recent_wall_time():0.2f} ms)."
+            f"({state.most_recent_wall_time():0.2f} ms)."
         )
 
     def log_state_success(self, state: State) -> None:
         print(f"Finished state {state.name} ({state.wall_time:0.2f} ms).")
+
+    def log(self, message: str) -> None:
+        print(message)
