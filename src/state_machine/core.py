@@ -4,16 +4,16 @@ import datetime as dt
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, NoReturn
 
-from .errors import StepExecutionError
+from .errors import StateExecutionError
 from .logger import Logger, NoLogger
-from .structures import StepResult
+from .structures import StateResult
 
 if TYPE_CHECKING:
     from .structures import ExecutionResult
     from .types import DriverHistory, ExecutionAttemptResult
 
 
-class Step(ABC):
+class State(ABC):
     max_retries: int = 0
 
     def __init__(self, logger: Logger | None = None) -> None:
@@ -49,7 +49,7 @@ class Step(ABC):
     def execute(self, data: dict) -> ExecutionResult:
         pass
 
-    def _execute(self, data: dict) -> StepResult | NoReturn:
+    def _execute(self, data: dict) -> StateResult | NoReturn:
         while self._attempt <= self.max_attempts:
             self._logger.log_attempt_start(self)
             result = self._execute_attempt(data=data)
@@ -60,12 +60,12 @@ class Step(ABC):
                 break
             self._attempt += 1
         else:
-            raise StepExecutionError(self, result)
-        self._logger.log_step_success(self)
-        return StepResult(
+            raise StateExecutionError(self, result)
+        self._logger.log_state_success(self)
+        return StateResult(
             data=result.data,
             wall_times=self.wall_times,
-            next_step=result.next_step,
+            next_state=result.next_state,
         )
 
     def _execute_attempt(self, data: dict) -> ExecutionAttemptResult:
@@ -91,14 +91,14 @@ class Step(ABC):
         return f"{self.__class__.__name__}()"
 
 
-class Driver:
+class StateMachine:
     def __init__(
         self,
-        first_step: Step,
+        first_state: State,
         initial_data: dict | None = None,
         logger: Logger | None = None,
     ) -> None:
-        self.current_step: Step = first_step
+        self.current_state: State = first_state
         self.data = initial_data if initial_data is not None else {}
         self.logger = logger if logger is not None else NoLogger()
         self.history: DriverHistory = []
@@ -106,12 +106,12 @@ class Driver:
 
     def start(self) -> None:
         self.logger.log_driver_start()
-        while self.current_step is not None:
-            step = self.current_step(logger=self.logger)
-            result = step._execute(data=self.data)
+        while self.current_state is not None:
+            state = self.current_state(logger=self.logger)
+            result = state._execute(data=self.data)
             self.data = result.data
-            self.history.append(step)
-            self.current_step = result.next_step
+            self.history.append(state)
+            self.current_state = result.next_state
         self.logger.log_driver_finish()
 
     @property

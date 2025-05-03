@@ -1,34 +1,37 @@
 """
-A test module for the state machine package.
+A sample module for the state machine package.
+
+Showcases how the package can be used to implement an ETL pipeline, where states
+can fail and have multiple attempts.
 """
 
 import random
 import time
 from typing import NoReturn
 
-from state_machine import ConsoleLogger, Driver, ExecutionResult, Step
+from state_machine import ConsoleLogger, ExecutionResult, State, StateMachine
 
 
-class Extract(Step):
+class Extract(State):
     name = "Extract"
     status = "Extracting data from API"
 
     def execute(self, data: dict) -> ExecutionResult:
         data["value"] = 1
         time.sleep(1.45)
-        return ExecutionResult(data=data, next_step=Transform)
+        return ExecutionResult(data=data, next_state=Transform)
 
 
-class Transform(Step):
+class Transform(State):
     name = "Transform"
     status = "Applying transformations to data"
-    max_retries = 1
+    max_retries = 3
 
     def execute(self, data: dict) -> ExecutionResult:
         data["value"] = 2
         self.randomly_fail()
         time.sleep(0.10)
-        return ExecutionResult(data=data, next_step=Load)
+        return ExecutionResult(data=data, next_state=Load)
 
     def randomly_fail(self, chance=0.5) -> None | NoReturn:
         random_value = random.random()
@@ -37,31 +40,23 @@ class Transform(Step):
             raise ValueError("Test error")
 
 
-class Load(Step):
+class Load(State):
     name = "Load"
     status = "Loading data into database"
 
     def execute(self, data: dict) -> ExecutionResult:
         data["value"] = 3
         time.sleep(0.19)
-        return ExecutionResult(data=data, next_step=None)
+        return ExecutionResult(data=data, next_state=None)
 
 
 def main() -> None:
-    driver = Driver(
-        first_step=Extract,
+    machine = StateMachine(
+        first_state=Extract,
         initial_data={"initial": True, "value": 0},
         logger=ConsoleLogger(),
     )
-    driver.start()
-    print()
-    print(driver.data)
-    print(driver.history)
-    print(driver.wall_time)
-    for step in driver.history:
-        print(step.max_retries)
-        print(step.wall_time)
-        print(step.wall_times)
+    machine.start()
 
 
 if __name__ == "__main__":

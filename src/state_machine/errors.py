@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NoReturn
 
 if TYPE_CHECKING:
-    from .core import Step
+    from .core import State
 
 
-class StepExecutionError(Exception):
-    def __init__(self, step: Step, exception: Exception) -> NoReturn:
-        if step.max_retries > 0:
-            message = f"exceeded {step.max_retries} retries"
+class StateExecutionError(Exception):
+    def __init__(self, state: State, exception: Exception) -> NoReturn:
+        if state.max_retries > 0:
+            message = f"exceeded {state.max_retries} retries"
         else:
             message = "failed"
-        message = f"Execution of step {step.name} {message}"
+        message = f"Execution of state {state.name} {message}"
         super().__init__(message)
         self.exception: Exception = exception

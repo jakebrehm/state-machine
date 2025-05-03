@@ -4,17 +4,17 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .core import Step
+    from .core import State
 
 
 @dataclass
 class ExecutionResult:
     data: dict
-    next_step: Step | None
+    next_state: State | None
 
 
 @dataclass
-class StepResult:
+class StateResult:
     data: dict
-    next_step: Step | None
+    next_state: State | None
     wall_times: list[float]
